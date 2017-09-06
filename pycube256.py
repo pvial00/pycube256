@@ -1,6 +1,6 @@
 import sys, time
 
-# pycube256
+# pycube256 0.1.1
 
 class Cube:
     def __init__(self, key, nonce=""):
@@ -27,14 +27,17 @@ class Cube:
                         shift = alphabet.pop(0)
                         alphabet.append(shift)
                         shift = alphabet.pop(2)
-                        alphabet.insert(44,shift)
+                        alphabet.insert(127,shift)
                     section_list.append(alphabet)
                 self.master_list.append(section_list)
 
         gen_cube(self.size_factor, self.size_factor, self.alphabet_size)
         self.init(key)
         if nonce != "":
-            self.key_cube(nonce)
+            noncelist = []
+            for char in nonce:
+                noncelist.append(ord(char))
+            self.key_cube(noncelist)
 
     def key_cube(self, key):
         for section in self.master_list:
@@ -50,7 +53,7 @@ class Cube:
                             shuffle = alphabet.pop(0)
                             alphabet.append(shuffle)
                             shuffle = alphabet.pop(2)
-                            alphabet.insert(44,shuffle)
+                            alphabet.insert(127,shuffle)
         for char in key:
             char_value = char
             sized_pos = char_value % self.size_factor
