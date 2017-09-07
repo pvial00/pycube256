@@ -2,7 +2,7 @@
 A Linear Feedback Shift Register Stream Cipher
 Python Implementation of the Cube256 Cipher
 
-Supports ASCII characters 32-122
+Supports binary data
 
 # Usage:
 >>> from pycube256 import Cube
