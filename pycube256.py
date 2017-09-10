@@ -1,4 +1,4 @@
-# pycube256 0.2.1
+# pycube256 0.3
 
 class Cube:
     def __init__(self, key, nonce=""):
@@ -82,10 +82,9 @@ class Cube:
        	mod_value = counter % self.alphabet_size
         for section in self.master_list:
             for key_element in sub_key:
-                shift_value = key_element % self.size_factor
                 for alphabet in section:
                     shift = alphabet.pop(mod_value)
-                    alphabet.insert(shift_value,shift)
+                    alphabet.insert(key_element,shift)
             section_shift = self.master_list.pop(key_element % self.size_factor)
             self.master_list.append(section_shift)
 
