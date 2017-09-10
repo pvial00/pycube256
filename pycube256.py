@@ -2,7 +2,6 @@
 
 class Cube:
     def __init__(self, key, nonce=""):
-        self.key_list = []
         self.key = ""
         self.master_list = []
         self.alphabet_dict = {}
@@ -53,6 +52,7 @@ class Cube:
                 self.master_list.append(section)
 
     def load_key(self, skey):
+        self.key_list = []
         self.key = skey
         for element in self.key:
             self.key_list.append(element)
