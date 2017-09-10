@@ -1,5 +1,4 @@
-import hashlib
-# pycube256 0.1.1
+# pycube256 0.2.1
 
 class Cube:
     def __init__(self, key, nonce=""):
@@ -38,7 +37,6 @@ class Cube:
     def key_cube(self, key):
         for section in self.master_list:
             for char in key:
-                #sized_pos = char % self.size_factor
                 for alphabet in section:
                     key_sub = alphabet.pop(char)
                     alphabet.append(key_sub)
@@ -52,8 +50,7 @@ class Cube:
             sized_pos = char % self.size_factor
             for x in range(char):
                 section = self.master_list.pop(sized_pos)
-                newpos = (sized_pos + x) % self.size_factor
-                self.master_list.insert(newpos,section)
+                self.master_list.append(section)
 
     def load_key(self, skey):
         self.key = skey
@@ -68,7 +65,7 @@ class Cube:
             sub_alpha = section.pop(sized_pos)
             sub = sub_alpha.pop(element)
             sub_alpha.append(sub)
-            section.insert(element,sub_alpha)
+            section.insert(sized_pos,sub_alpha)
             self.master_list.insert(sized_pos,section)
             sub_key.append(sub)
         self.load_key(sub_key)
@@ -82,10 +79,10 @@ class Cube:
         self.key_cube(key)
 
     def morph_cube(self, counter, sub_key):
-        mod_value = counter % self.size_factor
-        for key_element in sub_key:
-            shift_value = (mod_value + key_element) % self.size_factor
-            for section in self.master_list:
+       	mod_value = counter % self.alphabet_size
+        for section in self.master_list:
+            for key_element in sub_key:
+                shift_value = key_element % self.size_factor
                 for alphabet in section:
                     shift = alphabet.pop(mod_value)
                     alphabet.insert(shift_value,shift)
