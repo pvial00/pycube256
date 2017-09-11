@@ -18,3 +18,4 @@ Supports binary data
 
 # Standalone script usage:
 scripts/cube256.py <encrypt/decrypt>
+cat filename | python cube256.py key > file
