@@ -1,4 +1,4 @@
-# pycube256 0.3
+# pycube256 0.3.1
 
 class Cube:
     def __init__(self, key, nonce=""):
@@ -139,3 +139,60 @@ class Cube:
         else:
             print "Self test failed"
         return result
+
+class CubeHash:
+    def __init__(self, mode=256):
+        if mode == 128 or mode == 256 or mode == 512:
+            self.mode = mode
+        else:
+            raise ValueError('Invalid hash mode')
+
+    def hash(self, data):
+        iv = chr(0) * (self.mode / 8)
+        result = Cube(iv, data).encrypt(iv)
+        return result
+
+    def digest(self, data):
+        result = self.hash(data)
+        hash_result = result.encode('hex')
+        return hash_result
+
+class CubeRandom:
+    def __init__(self, iv=16):
+        import os
+        self.entropy = os.urandom(iv)
+
+    def random(self, num=1):
+        iv = chr(0) * num
+        return  Cube(self.entropy).encrypt(iv)
+
+    def choice(self, things):
+        num = len(things)
+        result = ord(self.random(1)) % num
+        return things[result]
+
+    def randrange(self, min, max, num=1):
+        randbytes = self.random(num)
+        result = ""
+        for byte in randbytes:
+            char = chr(ord(byte) % (max - min + 1) + min)
+            result += char
+        return result
+    
+    def randint(self, min=0, max=255):
+        randbyte = self.random(1)
+        result = ord(randbyte) % (max - min + 1) + min
+        return result
+
+    def shuffle(self, things):
+        num = len(things)
+        import array
+        from collections import deque
+        if type(things) is list or type(things) is array.array or type(things) is deque:
+            for i in reversed(range(num)):
+                j = num+1
+                while j > i:
+                    j = self.randint(0, num-1)
+                    self.entropy += chr(j)
+                things[i], things[j] = things[j], things[i]
+        return things

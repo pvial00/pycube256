@@ -4,6 +4,8 @@ Python Implementation of the Cube256 Cipher
 
 Supports binary data
 
+pycube256 also includes a random number generator and hash function CubeRandom() and CubeHash()
+
 # Usage:
 >>> from pycube256 import Cube
 >>> Cube("Test").encrypt("Welcome!")
@@ -19,3 +21,31 @@ Supports binary data
 # Standalone script usage:
 scripts/cube256.py <encrypt/decrypt>
 cat filename | python cube256.py key > file
+
+# CubeHash:
+from pycube256 import CubeHash
+stuff = "somethingtodo"
+print CubeHash().digest(stuff)
+b6ce700230738258646e0f302e84ccc4c8e08ac32c9f8918506f0231fcfeed22
+
+# CubeRandom:
+(Generates random value from 0 to 255 or chooses from or shuffles up to 256 items)  
+from pycube256 import CubeRandom  
+print CubeRandom().random()  
+?
+
+print CubeRandom().randrange(32, 122, 16)  
+EX^`%A$#=^3x"[F,
+
+print CubeRandom().randint(0, 10)  
+4
+
+things = [ 'apples', 'oranges', 'peach', 'pear', 'grapes', 'bananas']  
+print CubeRandom().shuffle(things)  
+['peach', 'apples', 'oranges', 'pear', 'bananas', 'grapes']
+
+things = ['peach', 'apples', 'oranges', 'pear', 'bananas', 'grapes']
+print CubeRandom().choice(things)
+oranges
+
+
