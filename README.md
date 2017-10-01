@@ -22,6 +22,15 @@ pycube256 also includes a random number generator and hash function CubeRandom()
 scripts/cube256.py <encrypt/decrypt>
 cat filename | python cube256.py key > file
 
+# CubeHMAC:
+from pycube256 import CubeHMAC
+pack = CubeHMAC().encrypt(msg, key)  
+plain = CubeHMAC().decrypt(pack, key)  
+
+Without packing  
+hmac, nonce, dig = CubeHMAC().encrypt(msg, key, pack=False)  
+plain = CubeHMAC().decrypt(hmac, key, nonce, dig, pack=False)  
+
 # CubeHash:
 from pycube256 import CubeHash
 stuff = "somethingtodo"

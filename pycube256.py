@@ -140,6 +140,41 @@ class Cube:
             print "Self test failed"
         return result
 
+class CubeHMAC:
+    def __init__(self, nonce_length=8):
+        self.nonce_length = nonce_length
+
+    def encrypt(self, data, key, nonce="", pack=True):
+        import hashlib, os
+        if nonce == "":
+            nonce = os.urandom(self.nonce_length)
+        hash_key = hashlib.pbkdf2_hmac('sha256', key, 'Cube', 100000)
+        msg = Cube(key, nonce).encrypt(data)
+        digest = hashlib.sha256(hash_key+msg).digest()
+        if pack == False:
+            return msg, nonce, digest
+        else:
+            return nonce+digest+msg
+
+    def decrypt(self, data, key, nonce="", digest="", pack=True):
+        import hashlib
+        hash_key = hashlib.pbkdf2_hmac('sha256', key, 'Cube', 100000)
+        if pack == False:
+            if hashlib.sha256(hash_key+data).digest() == digest:
+                msg = Cube(key, nonce).decrypt(data)
+                return msg
+            else:
+                return ValueError('HMAC failed: Message has been tampered with!')
+        else:
+            nonce = data[:self.nonce_length]
+            digest = data[self.nonce_length:self.nonce_length+32]
+            msg = data[self.nonce_length+32:]
+            if hashlib.sha256(hash_key+msg).digest() == digest:
+                msg = Cube(key, nonce).decrypt(msg)
+                return msg
+            else:
+                return ValueError('HMAC failed: Message has been tampered with!')
+
 class CubeHash:
     def __init__(self, mode=256):
         if mode == 128 or mode == 256 or mode == 512:
