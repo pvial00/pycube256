@@ -42,10 +42,10 @@ print CubeRandom().randint(0, 10)
 
 things = [ 'apples', 'oranges', 'peach', 'pear', 'grapes', 'bananas']  
 print CubeRandom().shuffle(things)  
-['peach', 'apples', 'oranges', 'pear', 'bananas', 'grapes']
+['peach', 'apples', 'oranges', 'pear', 'bananas', 'grapes']  
 
-things = ['peach', 'apples', 'oranges', 'pear', 'bananas', 'grapes']
-print CubeRandom().choice(things)
-oranges
+things = ['peach', 'apples', 'oranges', 'pear', 'bananas', 'grapes']  
+print CubeRandom().choice(things)  
+oranges  
 
 
