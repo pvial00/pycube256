@@ -23,6 +23,9 @@ scripts/cube256.py <encrypt/decrypt>
 cat filename | python cube256.py key > file
 
 # CubeHMAC:
+Signature checking tamper detection  
+(optional compression support)  
+
 from pycube256 import CubeHMAC
 pack = CubeHMAC().encrypt(msg, key)  
 plain = CubeHMAC().decrypt(pack, key)  
@@ -30,6 +33,10 @@ plain = CubeHMAC().decrypt(pack, key)
 Without packing  
 hmac, nonce, dig = CubeHMAC().encrypt(msg, key, pack=False)  
 plain = CubeHMAC().decrypt(hmac, key, nonce, dig, pack=False)  
+
+With compression  
+pack = CubeHMAC().encrypt(msg, key, compress=True)  
+plain = CubeHMAC().decrypt(pack, key, compress=True)  
 
 # CubeHash:
 from pycube256 import CubeHash

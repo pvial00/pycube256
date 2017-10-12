@@ -1,4 +1,4 @@
-# pycube256 0.3.2
+# pycube256 0.4.1
 
 class Cube:
     def __init__(self, key, nonce=""):
@@ -144,24 +144,30 @@ class CubeHMAC:
     def __init__(self, nonce_length=8):
         self.nonce_length = nonce_length
 
-    def encrypt(self, data, key, nonce="", pack=True):
-        import hashlib, os
+    def encrypt(self, data, key, nonce="", pack=True, compress=False):
+        import hashlib, os, zlib
         if nonce == "":
             nonce = os.urandom(self.nonce_length)
         hash_key = hashlib.pbkdf2_hmac('sha256', key, 'Cube', 100000)
-        msg = Cube(key, nonce).encrypt(data)
+        if compress == True:
+            msg = Cube(key, nonce).encrypt(zlib.compress(data))
+        else:
+            msg = Cube(key, nonce).encrypt(data)
         digest = hashlib.sha256(hash_key+msg).digest()
         if pack == False:
             return msg, nonce, digest
         else:
             return nonce+digest+msg
 
-    def decrypt(self, data, key, nonce="", digest="", pack=True):
-        import hashlib
+    def decrypt(self, data, key, nonce="", digest="", pack=True, compress=False):
+        import hashlib, zlib
         hash_key = hashlib.pbkdf2_hmac('sha256', key, 'Cube', 100000)
         if pack == False:
             if hashlib.sha256(hash_key+data).digest() == digest:
-                msg = Cube(key, nonce).decrypt(data)
+                if compress == True:
+                    msg = zlib.decompress(Cube(key, nonce).decrypt(data))
+                else:
+                    msg = Cube(key, nonce).decrypt(data)
                 return msg
             else:
                 return ValueError('HMAC failed: Message has been tampered with!')
@@ -170,7 +176,10 @@ class CubeHMAC:
             digest = data[self.nonce_length:self.nonce_length+32]
             msg = data[self.nonce_length+32:]
             if hashlib.sha256(hash_key+msg).digest() == digest:
-                msg = Cube(key, nonce).decrypt(msg)
+                if compress == True:
+                    msg = zlib.decompress(Cube(key, nonce).decrypt(msg))
+                else:
+                    msg = Cube(key, nonce).decrypt(msg)
                 return msg
             else:
                 return ValueError('HMAC failed: Message has been tampered with!')
