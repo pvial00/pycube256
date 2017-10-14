@@ -1,40 +1,51 @@
-# pycube256 0.4.1
+# pycube256 0.5
 
 class Cube:
-    def __init__(self, key, nonce=""):
-        self.key = ""
-        self.master_list = []
-        self.alphabet_dict = {}
-        self.alphabet_dict_rev = {}
+    def __init__(self, key, nonce="", sbox=[]):
         self.start_char = 0
         self.alphabet_size = 256
         self.size_factor = 3
+        
+        if len(sbox) == self.size_factor:
+            self.sbox = sbox
+        else:
+            self.sbox = self.gen_cube(self.size_factor, self.size_factor, self.alphabet_size)
 
-        def gen_cube(depth, width, length):
-            for z in range(0,depth):
-                section_list = []
-                for y in range(0,width):
-                    alphabet = []
-                    for x in range(0,length):
-                        alphabet.append(x)
-                    for mod in range(0,y):
-                        shift = alphabet.pop(0)
-                        alphabet.append(shift)
-                        shift = alphabet.pop(2)
-                        alphabet.insert(127,shift)
-                    section_list.append(alphabet)
-                self.master_list.append(section_list)
-
-        gen_cube(self.size_factor, self.size_factor, self.alphabet_size)
-        self.init(key)
+        self.key_init(key)
         if nonce != "":
             noncelist = []
             for char in nonce:
                 noncelist.append(ord(char))
             self.key_cube(noncelist)
+    
+    def key_init(self, initkey):
+        key = []
+        for char in initkey:
+            key.append(ord(char))
+        self.load_key(key)
+        self.key_cube(key)
+        
+    # Generate the initial permutation of the Cube S-Box
+    def gen_cube(self, depth, width, length):
+        sbox = []
+        for z in range(0,depth):
+            section_list = []
+            for y in range(0,width):
+                alphabet = []
+                for x in range(0,length):
+                    alphabet.append(x)
+                for mod in range(0,y):
+                    shift = alphabet.pop(0)
+                    alphabet.append(shift)
+                    shift = alphabet.pop(2)
+                    alphabet.insert(127,shift)
+                section_list.append(alphabet)
+            sbox.append(section_list)
+        return sbox
 
+    # Apply the key to the Cube to create the inital permutation of Cube
     def key_cube(self, key):
-        for section in self.master_list:
+        for section in self.sbox:
             for char in key:
                 for alphabet in section:
                     key_sub = alphabet.pop(char)
@@ -48,56 +59,48 @@ class Cube:
         for char in key:
             sized_pos = char % self.size_factor
             for x in range(char):
-                section = self.master_list.pop(sized_pos)
-                self.master_list.append(section)
-
+                section = self.sbox.pop(sized_pos)
+                self.sbox.append(section)
+    
     def load_key(self, skey):
         self.key_list = []
         self.key = skey
         for element in self.key:
             self.key_list.append(element)
 
+    # Substitute a new round key
     def key_scheduler(self, key):
         sub_key = []
         for element in key:
             sized_pos = element % self.size_factor
-            section = self.master_list.pop(sized_pos)
-            sub_alpha = section.pop(sized_pos)
+            section = self.sbox[sized_pos]
+            sub_alpha = section[sized_pos]
             sub = sub_alpha.pop(element)
             sub_alpha.append(sub)
-            section.insert(sized_pos,sub_alpha)
-            self.master_list.insert(sized_pos,section)
             sub_key.append(sub)
         self.load_key(sub_key)
         return sub_key
-    
-    def init(self, initkey):
-        key = []
-        for char in initkey:
-            key.append(ord(char))
-        self.load_key(key)
-        self.key_cube(key)
 
+    # Morphing round to permute the Cube S-Box into a new configuration
     def morph_cube(self, counter, sub_key):
        	mod_value = counter % self.alphabet_size
-        for section in self.master_list:
+        for section in self.sbox:
             for key_element in sub_key:
                 for alphabet in section:
-                    shift = alphabet.pop(mod_value)
-                    alphabet.insert(key_element,shift)
-            section_shift = self.master_list.pop(key_element % self.size_factor)
-            self.master_list.append(section_shift)
+                    alphabet[mod_value], alphabet[key_element] = alphabet[key_element], alphabet[mod_value]
+            section_shift = self.sbox.pop(key_element % self.size_factor)
+            self.sbox.append(section_shift)
 
-    def encrypt(self, words):
+    # Substitute data through all alphabets
+    def encrypt(self, data):
         cipher_text = ""
         sub_key = self.key
-        for counter, letter in enumerate(words):
+        for counter, letter in enumerate(data):
             sub = ord(letter)
-            for section in self.master_list:
+            for section in self.sbox:
                 for alphabet in section:
                     sub_pos = sub
-                    sub = alphabet.pop(sub_pos)
-                    alphabet.insert(sub_pos,sub)
+                    sub = alphabet[sub_pos]
                     shift = alphabet.pop(0)
                     alphabet.append(shift)
             sub_key = self.key_scheduler(sub_key)
@@ -105,12 +108,13 @@ class Cube:
             cipher_text += chr(sub)
         return cipher_text
 
-    def decrypt(self, words):
+    # Substitute data through all alphabets
+    def decrypt(self, data):
         plain_text = ""
         sub_key = self.key
-        for counter, letter in enumerate(words):
+        for counter, letter in enumerate(data):
             sub = ord(letter)
-            for section in reversed(self.master_list):
+            for section in reversed(self.sbox):
                 for alphabet in reversed(section):
                     sub = alphabet.index(sub)
                     shift = alphabet.pop(0)
@@ -120,11 +124,13 @@ class Cube:
             plain_text += chr(sub)
         return plain_text
 
+    # Perform a self test to ensure all initial alphabets are unique
     def selftest(self):
+        import hashlib
         hashlist = []
         buf =""
         result = True
-        for section in self.master_list:
+        for section in self.sbox:
             for alphabet in section:
                 for char in alphabet:
                     buf += chr(char)
