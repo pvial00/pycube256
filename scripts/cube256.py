@@ -1,5 +1,5 @@
 from pycube256 import Cube
-import sys, select, getpass, os
+import sys, select, getpass, os, time, getopt
     
 try:
     mode = sys.argv[1]
@@ -13,19 +13,23 @@ if mode == "selftest":
 else:
 
     if select.select([sys.stdin,],[],[],0.0)[0]:
-        words = sys.stdin.read()
-        lastbyte = words[len(words) - 1:len(words)]
-        if lastbyte == chr(10):
-            words = words[:len(words) - 1]
+        data = sys.stdin.read()
     else:
-        words = raw_input("Enter text to cipher: ")
+        sys.exit(1)
 
     try:
         key = sys.argv[2]
     except IndexError as ier:
         key = getpass.getpass("Enter key: ")
 
+    start = time.time()
+
     if mode == "encrypt":
-        print Cube(key).encrypt(words)
+        sys.stdout.write(Cube(key).encrypt(data))
     elif mode == "decrypt":
-        print Cube(key).decrypt(words)
+        sys.stdout.write(Cube(key).decrypt(data))
+
+    end = time.time() - start
+    bps = len(data) / end
+    sys.stderr.write("Completed in "+str(end)+" seconds\n")
+    sys.stderr.write(str(bps)+" bytes per second.\n")
