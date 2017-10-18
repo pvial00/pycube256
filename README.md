@@ -65,7 +65,7 @@ print CubeRandom().choice(things)
 oranges  
 
 # CubeBlock:  
-Block cipher based on Cube  
+Experimental Block cipher based on Cube  
 
 CubeBlock("key").encrypt(data)
 CubeBlock("key", "nonce").decrypt(data) 
