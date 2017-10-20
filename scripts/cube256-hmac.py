@@ -13,21 +13,21 @@ output_filename = sys.argv[3]
 try:
     infile = open(input_filename, "r")
 except IOError as ier:
-    print "Input filename not found."
+    print "Input file not found."
     sys.exit(1)
 
 try:
     outfile = open(output_filename, "w")
 except IOError as ier:
-    print "Output filename not found."
+    print "Output file not found."
     sys.exit(1)
 
 try:
     passkey = sys.argv[4]
 except IndexError as ier:
     passkey = getpass.getpass("Enter key: ")
-key = hashlib.pbkdf2_hmac('sha1', passkey, '~03f%O4nI2', 100000)
 
+key = hashlib.pbkdf2_hmac('sha256', passkey, '~03f%O4nI2)Vk@5Gy[31q', 100000)
 
 start = time.time()
 data = infile.read()
