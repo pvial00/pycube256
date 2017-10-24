@@ -69,3 +69,8 @@ Experimental Block cipher based on Cube
 
 CubeBlock("key").encrypt(data)
 CubeBlock("key", "nonce").decrypt(data) 
+
+# CubePIN:
+Random generation of PIN numbers
+
+CubePin().generate()

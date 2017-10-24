@@ -147,59 +147,46 @@ class Cube:
         return result
 
 class CubeHMAC:
-    def __init__(self, nonce_length=8, algorithm="Cube"):
-        self.algorithm = algorithm
+    def __init__(self, nonce_length=8):
         self.nonce_length = nonce_length
+        self.digest_length = 32
 
-    def encrypt(self, data, key, nonce="", pack=True, compress=False):
+    def encrypt(self, data, key, nonce="", aad="", pack=True, compress=False):
         import hashlib, os, zlib
         if nonce == "":
-            nonce = os.urandom(self.nonce_length)
-        hash_key = hashlib.pbkdf2_hmac('sha256', key, 'Cube', 100000)
+            nonce = CubeRandom().random(self.nonce_length)
+        hash_key = hashlib.pbkdf2_hmac('sha256', key, '%39xS01(#Ef78a41aB2$1', 100001)
         if compress == True:
-            if self.algorithm == "Cube":
-                msg = Cube(key, nonce).encrypt(zlib.compress(data))
-            elif self.algorithm == "CubeBlock":
-                msg = CubeBlock(key, nonce).encrypt(zlib.compress(data))
+            msg = Cube(key, nonce).encrypt(zlib.compress(data))
         else:
-            if self.algorithm == "Cube":
-                msg = Cube(key, nonce).encrypt(data)
-            elif self.algorithm == "CubeBlock":
-                msg = CubeBlock(key, nonce).encrypt(data)
-        digest = hashlib.sha256(hash_key+msg).digest()
+            msg = Cube(key, nonce).encrypt(data)
+        digest = hashlib.sha256(hash_key+aad+nonce+msg).digest()
         if pack == False:
-            return msg, nonce, digest
+            return aad, nonce, digest, msg
         else:
-            return nonce+digest+msg
+            return aad+nonce+digest+msg
 
-    def decrypt(self, data, key, nonce="", digest="", pack=True, compress=False):
+    def decrypt(self, data, key, nonce="", aad="", aadlen=0, digest="", pack=True, compress=False):
         import hashlib, zlib
-        hash_key = hashlib.pbkdf2_hmac('sha256', key, 'Cube', 100000)
+        hash_key = hashlib.pbkdf2_hmac('sha256', key, '%39xS01(#Ef78a41aB2$1', 100001)
         if pack == False:
-            if hashlib.sha256(hash_key+data).digest() == digest:
+            if hashlib.sha256(hash_key+aad+nonce+data).digest() == digest:
                 if compress == True:
-                    if self.algorithm == "Cube":
-                        msg = zlib.decompress(Cube(key, nonce).decrypt(data))
-                    elif self.algorithm == "CubeBlock":
-                        msg = zlib.decompress(CubeBlock(key, nonce).decrypt(data))
+                    return zlib.decompress(Cube(key, nonce).decrypt(data))
                 else:
-                    if self.algorithm == "Cube":
-                        msg = Cube(key, nonce).decrypt(data)
-                    elif self.algorithm == "CubeBlock":
-                        msg = CubeBlock(key, nonce).decrypt(data)
-                return msg
+                    return Cube(key, nonce).decrypt(data)
             else:
                 return ValueError('HMAC failed: Message has been tampered with!')
         else:
-            nonce = data[:self.nonce_length]
-            digest = data[self.nonce_length:self.nonce_length+32]
-            msg = data[self.nonce_length+32:]
-            if hashlib.sha256(hash_key+msg).digest() == digest:
+            aad = data[:aadlen]
+            nonce = data[aadlen:aadlen+self.nonce_length]
+            digest = data[aadlen+self.nonce_length:aadlen+self.nonce_length+self.digest_length]
+            msg = data[aadlen+self.nonce_length+self.digest_length:]
+            if hashlib.sha256(hash_key+aad+nonce+msg).digest() == digest:
                 if compress == True:
-                    msg = zlib.decompress(Cube(key, nonce).decrypt(msg))
+                    return  zlib.decompress(Cube(key, nonce).decrypt(msg))
                 else:
-                    msg = Cube(key, nonce).decrypt(msg)
-                return msg
+                    return  Cube(key, nonce).decrypt(msg)
             else:
                 return ValueError('HMAC failed: Message has been tampered with!')
 
@@ -256,16 +243,17 @@ class CubeRandom:
                 j = num+1
                 while j > i:
                     j = self.randint(0, num-1)
-                    self.entropy += chr(j)
+                    self.entropy = self.entropy[:16] + chr(j)
                 things[i], things[j] = things[j], things[i]
         return things
 
 class CubeBlock:
-    def __init__(self, key, nonce="", sbox=[]):
+    def __init__(self, key, nonce="", sbox=[], padding=True):
         self.block_size = 16
         self.start_char = 0
         self.alphabet_size = 256
         self.size_factor = 3
+        self.padding = padding
         
         if len(sbox) == self.size_factor:
             self.sbox = sbox
@@ -368,10 +356,12 @@ class CubeBlock:
 
         for block_counter, block in enumerate(blocks):
             if block_counter == num_blocks - 1:
-                if len(block) < self.block_size:
-                    pad_byte = self.block_size - len(block)
-                    padding = chr(pad_byte) * (pad_byte)
-                    block += padding
+                # If padding is enabled the last block is padded
+                if self.padding == True:
+                    if len(block) < self.block_size:
+                        pad_byte = self.block_size - len(block)
+                        padding = chr(pad_byte) * (pad_byte)
+                        block += padding
 
             for counter, byte in enumerate(block):
                 sub = ord(byte)
@@ -406,15 +396,17 @@ class CubeBlock:
                         shift = alphabet.pop(0)
                         alphabet.append(shift)
                 plain_text += chr(sub)
-            if block_counter == (num_blocks - 1):
-                pad_block = plain_text[len(plain_text) - (self.block_size):]
-                pad_count = ord(pad_block[self.block_size - 1])
-                true_pad_count = 0
-                for x in reversed(range(len(pad_block))):
-                    if ord(pad_block[x]) == pad_count:
-                        true_pad_count += 1
-                if pad_count == true_pad_count:
-                    plain_text = plain_text[:len(plain_text) - pad_count]
+            # If padding is enabled the last block is unpadded
+            if self.padding == True:
+                if block_counter == (num_blocks - 1):
+                    pad_block = plain_text[len(plain_text) - (self.block_size):]
+                    pad_count = ord(pad_block[self.block_size - 1])
+                    true_pad_count = 0
+                    for x in reversed(range(len(pad_block))):
+                        if ord(pad_block[x]) == pad_count:
+                            true_pad_count += 1
+                    if pad_count == true_pad_count:
+                        plain_text = plain_text[:len(plain_text) - pad_count]
 
             sub_key = self.key_scheduler(sub_key)
             self.morph_cube(counter, sub_key)
@@ -441,3 +433,16 @@ class CubeBlock:
         else:
             print "Self test failed"
         return result
+
+class CubePIN:
+    def __init__(self, length=4):
+        self.length = length
+        self.min = 0
+        self.max = 9
+
+    def generate(self, num=1):
+        pin = ""
+        for x in range(self.length):
+            pin += str(CubeRandom().randint(self.min, self.max))
+        return pin
+
