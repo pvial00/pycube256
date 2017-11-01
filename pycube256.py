@@ -1,4 +1,4 @@
-# pycube256 0.5.3
+# pycube256 0.5.4
 
 class Cube:
     def __init__(self, key, nonce="", sbox=[]):

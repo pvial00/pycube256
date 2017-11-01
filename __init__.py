@@ -4,3 +4,7 @@ from pycube256 import CubeHash
 from pycube256 import CubeHMAC
 from pycube256 import CubeBlock
 from pycube256 import CubePIN
+from pycube256 import CubeSharedKey
+from pycube256 import CubeKDF
+from pycube256 import CubeKeyWrap
+from pycube256 import CubeKeys
