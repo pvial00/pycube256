@@ -70,6 +70,29 @@ Experimental Block cipher based on Cube
 CubeBlock("key").encrypt(data)
 CubeBlock("key", "nonce").decrypt(data) 
 
+# CubeSharedKey:
+Allows many parties to be present to encrypt or decrypt
+
+cipher = CubeSharedKey(list_of_keys)
+cipher.encrypt(data)
+
+# CubeKeys:
+Randomly generate keys
+
+keys = CubeKeys().genkeys(2, 16)
+
+# CubeKeyWrap:
+Uses CubeHMAC to provide another layer of security utilizing key wrapping
+
+cipher = CubeKeyWrap()
+cipher_text = cipher.encrypt(msg, key)
+plain_text = cipher.decrypt(cipher_text, key)
+
+# CubeKDF:
+Key derivation function utilizing CubeHash
+
+key = CubeKDF().genkey(a_key)
+
 # CubePIN:
 Random generation of PIN numbers
 

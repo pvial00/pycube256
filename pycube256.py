@@ -1,11 +1,11 @@
-# pycube256 0.5.1
+# pycube256 0.5.3
 
 class Cube:
     def __init__(self, key, nonce="", sbox=[]):
         self.start_char = 0
         self.alphabet_size = 256
         self.size_factor = 3
-        
+
         if len(sbox) == self.size_factor:
             self.sbox = sbox
         else:
@@ -17,14 +17,14 @@ class Cube:
             for char in nonce:
                 noncelist.append(ord(char))
             self.key_cube(noncelist)
-    
+
     def key_init(self, initkey):
         key = []
         for char in initkey:
             key.append(ord(char))
         self.load_key(key)
         self.key_cube(key)
-        
+
     # Generate the initial permutation of the Cube S-Box
     def gen_cube(self, depth, width, length):
         sbox = []
@@ -61,7 +61,7 @@ class Cube:
             for x in range(char):
                 section = self.sbox.pop(sized_pos)
                 self.sbox.append(section)
-    
+   
     def load_key(self, skey):
         self.key_list = []
         self.key = skey
@@ -83,7 +83,7 @@ class Cube:
 
     # Morphing round to permute the Cube S-Box into a new configuration
     def morph_cube(self, counter, sub_key):
-       	mod_value = counter % self.alphabet_size
+        mod_value = counter % self.alphabet_size
         for section in self.sbox:
             for key_element in sub_key:
                 for alphabet in section:
@@ -146,49 +146,55 @@ class Cube:
             print "Self test failed"
         return result
 
+
+
+
 class CubeHMAC:
     def __init__(self, nonce_length=8):
         self.nonce_length = nonce_length
         self.digest_length = 32
 
-    def encrypt(self, data, key, nonce="", aad="", pack=True, compress=False):
+    def encrypt(self, data, key, nonce="", aad="", pack=True, compress=False, salt='%39xS01(#Ef78a41aB2$'):
         import hashlib, os, zlib
         if nonce == "":
             nonce = CubeRandom().random(self.nonce_length)
-        hash_key = hashlib.pbkdf2_hmac('sha256', key, '%39xS01(#Ef78a41aB2$1', 100001)
+        hash_key = hashlib.pbkdf2_hmac('sha256', key, salt, 100001)
         if compress == True:
             msg = Cube(key, nonce).encrypt(zlib.compress(data))
         else:
             msg = Cube(key, nonce).encrypt(data)
-        digest = hashlib.sha256(hash_key+aad+nonce+msg).digest()
+        digest1 = hashlib.sha256(key+aad+nonce+msg).digest()
+        digest = hashlib.sha256(hash_key+digest1).digest()
         if pack == False:
             return aad, nonce, digest, msg
         else:
             return aad+nonce+digest+msg
 
-    def decrypt(self, data, key, nonce="", aad="", aadlen=0, digest="", pack=True, compress=False):
+    def decrypt(self, data, key, nonce="", aad="", aadlen=0, digest="", pack=True, compress=False, salt='%39xS01(#Ef78a41aB2$'):
         import hashlib, zlib
-        hash_key = hashlib.pbkdf2_hmac('sha256', key, '%39xS01(#Ef78a41aB2$1', 100001)
+        hash_key = hashlib.pbkdf2_hmac('sha256', key, salt, 100001)
         if pack == False:
-            if hashlib.sha256(hash_key+aad+nonce+data).digest() == digest:
+            digest1 = hashlib.sha256(key+aad+nonce+data).digest()
+            if hashlib.sha256(hash_key+digest1).digest() == digest:
                 if compress == True:
                     return zlib.decompress(Cube(key, nonce).decrypt(data))
                 else:
                     return Cube(key, nonce).decrypt(data)
             else:
-                return ValueError('HMAC failed: Message has been tampered with!')
+                raise ValueError('HMAC failed: Message has been tampered with!')
         else:
             aad = data[:aadlen]
             nonce = data[aadlen:aadlen+self.nonce_length]
             digest = data[aadlen+self.nonce_length:aadlen+self.nonce_length+self.digest_length]
             msg = data[aadlen+self.nonce_length+self.digest_length:]
-            if hashlib.sha256(hash_key+aad+nonce+msg).digest() == digest:
+            digest1 = hashlib.sha256(key+aad+nonce+msg).digest()
+            if hashlib.sha256(hash_key+digest1).digest() == digest:
                 if compress == True:
-                    return  zlib.decompress(Cube(key, nonce).decrypt(msg))
+                    return zlib.decompress(Cube(key, nonce).decrypt(msg))
                 else:
-                    return  Cube(key, nonce).decrypt(msg)
+                    return Cube(key, nonce).decrypt(msg)
             else:
-                return ValueError('HMAC failed: Message has been tampered with!')
+                raise ValueError('HMAC failed: Message has been tampered with!')
 
 class CubeHash:
     def __init__(self, mode=256):
@@ -197,13 +203,19 @@ class CubeHash:
         else:
             raise ValueError('Invalid hash mode')
 
-    def hash(self, data):
-        iv = chr(0) * (self.mode / 8)
+    def hash(self, data, key=""):
+        if key == "":
+            iv = chr(0) * (self.mode / 8)
+        else:
+            iv = key
         result = Cube(iv, data).encrypt(iv)
         return result
 
-    def digest(self, data):
-        result = self.hash(data)
+    def digest(self, data, key=""):
+        if key != "":
+            result = self.hash(data)
+        else:
+            result = self.hash(data, key)
         hash_result = result.encode('hex')
         return hash_result
 
@@ -332,7 +344,7 @@ class CubeBlock:
 
     # Morphing round to permute the Cube S-Box into a new configuration
     def morph_cube(self, counter, sub_key):
-       	mod_value = counter % self.alphabet_size
+        mod_value = counter % self.alphabet_size
         for section in self.sbox:
             for key_element in sub_key:
                 for alphabet in section:
@@ -434,6 +446,65 @@ class CubeBlock:
             print "Self test failed"
         return result
 
+class CubeSharedKey:
+    def __init__(self, keys=None, num_keys=2, keylength=16):
+        if keys == None:
+            keys = CubeKeys().genkeys(num_keys, keylength)
+        self.keys = list(keys)
+        self.master_key = self.xor(keys.pop(0), keys.pop(0))
+        for key in keys:
+            self.master_key = self.xor(self.master_key, key)
+
+    def xor(self, key1, key2):
+        new_key = ""
+        for x in range(len(key1)):
+            new_key+= chr(ord(key1[x]) ^ ord(key2[x]))
+        return new_key
+
+    def encrypt(self, data):
+        return CubeHMAC().encrypt(data, self.master_key)
+
+    def decrypt(self, data):
+        return CubeHMAC().decrypt(data, self.master_key)
+
+class CubeKDF:
+    def genkey(self, key, salt="", iterations=10, length=128):
+        if salt != "":
+            salt = CubeHash(mode=128).hash(salt)
+        for x in range(iterations):
+            key = CubeHash().hash(key, salt)
+        return key
+
+class CubeKeys:
+    def genkeys(self, num_keys=1, keylength=16):
+        keys = []
+        for x in range(num_keys):
+            keys.append(CubeRandom().random(keylength))
+        return keys
+
+class CubeKeyWrap:
+    def __init__(self):
+        self.keylength = 16
+
+    def wrapkey(self, key, session_key):
+        return Cube(key).encrypt(session_key)
+
+    def unwrapkey(self, key, hidden_key):
+        return Cube(key).decrypt(hidden_key)
+
+    def encrypt(self, data, key):
+        skey = CubeKeys().genkeys(1, self.keylength)
+        session_key = skey.pop()
+        cipher_text = CubeHMAC().encrypt(data, session_key)
+        hidden_key = self.wrapkey(key, session_key)
+        return hidden_key+cipher_text
+
+    def decrypt(self, data, key):
+        hidden_key = data[:self.keylength]
+        session_key = self.unwrapkey(key, hidden_key)
+        cipher_text = data[self.keylength:]
+        return CubeHMAC().decrypt(cipher_text, session_key)
+
 class CubePIN:
     def __init__(self, length=4):
         self.length = length
@@ -445,4 +516,3 @@ class CubePIN:
         for x in range(self.length):
             pin += str(CubeRandom().randint(self.min, self.max))
         return pin
-
