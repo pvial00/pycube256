@@ -84,7 +84,7 @@ if mode == "encrypt":
     outfile.close()
     os.system("tar -cvf "+output_filename+".tar"+" "+output_filename+" "+output_filename+".pkg")
     os.system("rm "+output_filename)
-    os.system("rm "+output_filename+pkg)
+    os.system("rm "+output_filename+".pkg")
 elif mode == "decrypt":
     privkey = raw_input("Enter private key filename: ")
     sk = import_priv_key(privkey)
