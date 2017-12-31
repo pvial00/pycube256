@@ -88,13 +88,13 @@ if mode == "encrypt":
 elif mode == "decrypt":
     privkey = raw_input("Enter private key filename: ")
     sk = import_priv_key(privkey)
+    os.system("tar -xvf "+input_filename+".tar")
     try:
         pkgfile = open(input_filename+".pkg", "r")
         pkg = pkgfile.read()
     except IOError as ier:
         print "Couldn't open pkg file."
         sys.exit(1)
-    os.system("tar -xvf "+input_filename+".tar")
     pkgfile.close()
     session_key = rsa_decrypt(pkg, sk)
     try:
