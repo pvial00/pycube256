@@ -1,5 +1,5 @@
 # pycube256
-A Linear Feedback Shift Register Stream Cipher
+A General Purpose Stream Cipher
 Python Implementation of the Cube256 Cipher
 
 Supports binary data
