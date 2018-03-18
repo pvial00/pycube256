@@ -4,7 +4,9 @@ Python Implementation of the Cube256 Cipher
 
 Supports binary data
 
-pycube256 also includes a random number generator and hash function CubeRandom() and CubeHash()
+pycube256 also includes a random number generator and hash function CubeRandom() and CubeSum()
+
+Note: CubeHash has been deprecated in favor of the CubeSum
 
 # Usage:
 >>> from pycube256 import Cube
@@ -38,10 +40,10 @@ With compression
 pack = CubeHMAC().encrypt(msg, key, compress=True)  
 plain = CubeHMAC().decrypt(pack, key, compress=True)  
 
-# CubeHash:
-from pycube256 import CubeHash
+# CubeSum:
+from pycube256 import CubeSum
 stuff = "somethingtodo"
-print CubeHash().digest(stuff)
+print CubeSum().digest(stuff)
 b6ce700230738258646e0f302e84ccc4c8e08ac32c9f8918506f0231fcfeed22
 
 # CubeRandom:
@@ -89,7 +91,7 @@ cipher_text = cipher.encrypt(msg, key)
 plain_text = cipher.decrypt(cipher_text, key)
 
 # CubeKDF:
-Key derivation function utilizing CubeHash
+Key derivation function utilizing CubeSum
 
 key = CubeKDF().genkey(a_key)
 
