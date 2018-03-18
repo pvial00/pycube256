@@ -193,28 +193,21 @@ class CubeHMAC:
             else:
                 raise ValueError('HMAC failed: Message has been tampered with!')
 
-class CubeHash:
-    def __init__(self, mode=256):
-        if mode == 128 or mode == 256 or mode == 512:
-            self.mode = mode
-        else:
-            raise ValueError('Invalid hash mode')
+class CubeSum:
+    def __init__(self, mode=16):
+        self.mode = mode
 
     def hash(self, data, key=""):
         if key == "":
-            iv = chr(0) * (self.mode / 8)
+            iv = chr(0) * self.mode
+            return Cube(data, iv).encrypt(iv)
         else:
-            iv = key
-        result = Cube(iv, data).encrypt(iv)
+            return Cube(data, key).encrypt(key)
         return result
 
     def digest(self, data, key=""):
-        if key != "":
-            result = self.hash(data)
-        else:
-            result = self.hash(data, key)
-        hash_result = result.encode('hex')
-        return hash_result
+        self.hash(data, key)
+        return result.encode('hex')
 
 class CubeRandom:
     def __init__(self, iv=16):
@@ -465,12 +458,12 @@ class CubeSharedKey:
         return CubeHMAC().decrypt(data, self.master_key)
 
 class CubeKDF:
-    def genkey(self, key, salt="", iterations=10, length=128):
-        if salt != "":
-            salt = CubeHash(mode=length).hash(salt)
+    def genkey(self, key, iterations=10, length=16):
+        h = key
+        key = CubeSum(mode=length).hash(key)
         for x in range(iterations):
-            key = CubeHash(mode=length).hash(key, salt)
-        return key
+            h = CubeSum(mode=length).hash(h, key)
+        return h
 
 class CubeKeys:
     def genkeys(self, num_keys=1, keylength=16):
