@@ -114,26 +114,6 @@ class Cube:
         return plain_text
 
     # Perform a self test to ensure all initial alphabets are unique
-    def uniquetest(self):
-        import hashlib
-        hashlist = []
-        buf =""
-        result = True
-        for section in self.sbox:
-            for alphabet in section:
-                for char in alphabet:
-                    buf += chr(char)
-                entry = hashlib.sha224(buf).digest()
-                if entry in hashlist:
-                    print "Failure: Entry " + entry + " is not unique!"
-                    result = False
-                else:
-                    hashlist.append(entry)
-        if result == True:
-            print "Self test passed"
-        else:
-            print "Self test failed"
-        return result
 
 class CubeTest:
     def selftest(self):
@@ -413,28 +393,6 @@ class CubeBlock:
             sub_key = self.key_scheduler(sub_key)
             self.morph_cube(counter, sub_key)
         return plain_text
-
-    # Perform a self test to ensure all initial alphabets are unique
-    def selftest(self):
-        import hashlib
-        hashlist = []
-        buf =""
-        result = True
-        for section in self.sbox:
-            for alphabet in section:
-                for char in alphabet:
-                    buf += chr(char)
-                entry = hashlib.sha224(buf).digest()
-                if entry in hashlist:
-                    print "Failure: Entry " + entry + " is not unique!"
-                    result = False
-                else:
-                    hashlist.append(entry)
-        if result == True:
-            print "Self test passed"
-        else:
-            print "Self test failed"
-        return result
 
 class CubeSharedKey:
     def __init__(self, keys=None, num_keys=2, keylength=16):
